@@ -13,6 +13,10 @@ db = SQLAlchemy(app, engine_options={'connect_args': {'check_same_thread': False
 
 
 class AbstractShopUnit(db.Model):
+    """Abstract class from which ShopUnit and OldShopUnit are inherited.
+
+    It contains everything they should have in common.
+    """
     __abstract__ = True
 
     id = db.Column(db.String(36), primary_key=True)
@@ -25,15 +29,18 @@ class AbstractShopUnit(db.Model):
 
     # getters
     def get_price(self) -> int or None:
+        """Returns a correct price whether self is a category or a product."""
         if self.is_category:
             return int(self.price / self.num_children) if (self.num_children and self.price) else None
         else:
             return self.price
 
     def get_num_children(self) -> int:
+        """Returns a correct number of children whether self is a category or a product."""
         return self.num_children if self.is_category else 1
 
     def get_dict(self) -> dict:
+        """Generates a dict (JSON-like) view of instance."""
         return {
             'id': self.id,
             'name': self.name,
@@ -50,6 +57,7 @@ class AbstractShopUnit(db.Model):
 
 
 class ShopUnit(AbstractShopUnit):
+    """"""
     updated_at = db.Column(db.DateTime, nullable=False)
 
     # adders
@@ -61,6 +69,7 @@ class ShopUnit(AbstractShopUnit):
 
     # getters
     def get_children(self) -> list or None:
+        """Gets all children of instance (in dict form)"""
         if not self.is_category:
             return None
         children = ShopUnit.query.filter_by(parent_id=self.id).all()
@@ -73,6 +82,10 @@ class ShopUnit(AbstractShopUnit):
 
     # updaters
     def update_time(self, time: datetime) -> set:
+        """Updates instance`s time and parents`.
+
+        Returns the list of all parents` ids.
+        """
         self.updated_at = time
         parent_ids = set()
         cur_id = self.parent_id
@@ -83,6 +96,7 @@ class ShopUnit(AbstractShopUnit):
         return parent_ids
 
     def update_price(self, price: int):
+        """Updates instance`s price and parents`"""
         if (not self.is_category) and (diff := (price - self.price)):
             cur_id = self.parent_id
             while unit := ShopUnit.query.get(cur_id):
@@ -90,6 +104,7 @@ class ShopUnit(AbstractShopUnit):
                 cur_id = unit.parent_id
 
     def update_parent(self, parent_id):
+        """Updates all current parents` info and then - all new parents`."""
         total_price = self.price if self.price else 0
         # update info in old parents
         if self.parent_id != parent_id:
@@ -104,6 +119,7 @@ class ShopUnit(AbstractShopUnit):
 
     # delete methods
     def delete_preparation(self, num: int, total_price: int):
+        """Updates parents` prices and num_children."""
         cur_id = self.parent_id
         while unit := ShopUnit.query.get(cur_id):
             unit.num_children -= num
@@ -111,6 +127,7 @@ class ShopUnit(AbstractShopUnit):
             cur_id = unit.parent_id
 
     def full_delete(self) -> (int, int):
+        """Updates parents` info and deletes all children."""
         counter = 1
         full_price = self.price
         ids_to_del = {self.id}      # is used to delete history
@@ -142,17 +159,20 @@ class ShopUnit(AbstractShopUnit):
 
 
 class OldShopUnit(AbstractShopUnit):
+    """The same ShopUnit, but only for constant storing both old and actual versions."""
     # Primary key: (id, updated_at)
     updated_at = db.Column(db.DateTime, primary_key=True)
 
     # static methods
     @staticmethod
     def add_all(id_set: set | list):
+        """Copies all instances with ids in <id_set> to the OldShopUnit table."""
         copies = [OldShopUnit(u) for u in ShopUnit.query.filter(ShopUnit.id.in_(id_set)).all()]
         db.session.add_all(copies)
 
     @staticmethod
     def delete_all(id_set: set | list):
+        """Deletes all instances with ids in <id_set> from the OldShopUnit table."""
         OldShopUnit.query.filter(OldShopUnit.id.in_(id_set)).delete()
 
     # defaults
@@ -160,6 +180,7 @@ class OldShopUnit(AbstractShopUnit):
         return super(OldShopUnit, self).__repr__(addition='Old')
 
     def __init__(self, shop_unit: ShopUnit):
+        """Copy constructor"""
         super(OldShopUnit, self).__init__(id=shop_unit.id, name=shop_unit.name, price=shop_unit.price,
                                           is_category=shop_unit.is_category, updated_at=shop_unit.updated_at,
                                           parent_id=shop_unit.parent_id, num_children=shop_unit.num_children)
@@ -167,6 +188,7 @@ class OldShopUnit(AbstractShopUnit):
 
 @app.post("/imports")
 def import_shop_unit():
+    """Validates input and adds imported units to the database."""
     used_ids, to_add_ids = set(), set()
     data = request.get_json()
     bad_request_response = {"code": 400,  "message": "Validation Failed"}, status.HTTP_400_BAD_REQUEST
@@ -215,6 +237,7 @@ def import_shop_unit():
 
 @app.delete("/delete/<target_id>")
 def delete_shop_unit(target_id: str):
+    """Deletes unit with <target_id> if id is valid."""
     # input validation
     if not uuid_validation(target_id):
         return {"code": 400,  "message": "Validation Failed"}, status.HTTP_400_BAD_REQUEST
@@ -228,6 +251,7 @@ def delete_shop_unit(target_id: str):
 
 @app.get("/nodes/<target_id>")
 def get_nodes(target_id: str):
+    """Validates input and returns a dict view of ShopUnit with it`s children."""
     # input validation
     if not uuid_validation(target_id):
         return {"code": 400,  "message": "Validation Failed"}, status.HTTP_400_BAD_REQUEST
@@ -240,6 +264,7 @@ def get_nodes(target_id: str):
 
 @app.get("/sales")
 def get_sales():
+    """Returns all objects updated in the last 24 hours."""
     if not (date := iso_validation(request.args.get('date'))):
         return {"code": 400,  "message": "Validation Failed"}, status.HTTP_400_BAD_REQUEST
 
@@ -252,6 +277,7 @@ def get_sales():
 
 @app.get("/node/<target_id>/statistic")
 def get_statistics(target_id: str):
+    """Returns all versions of the object that existed in the given half-interval."""
     start_date = iso_validation(request.args.get('dateStart'))
     end_date = iso_validation(request.args.get('dateStart'))
 

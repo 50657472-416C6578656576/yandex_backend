@@ -19,6 +19,7 @@ def uuid_validation(value: str) -> bool:
 
 
 def type_validation(new_type: str, price: int) -> bool:
+    """Validates <type> and <price> correspondence."""
     # valid typing check
     if new_type not in ['OFFER', 'CATEGORY']:
         return False
@@ -34,10 +35,12 @@ def type_validation(new_type: str, price: int) -> bool:
 
 
 def two_types_validation(new_type: str, old_is_category: bool, price: int) -> bool:
+    """Validates <type>, <old_type> and <price> correspondence."""
     return ('CATEGORY' == new_type) == old_is_category and type_validation(new_type, price)
 
 
 def import_req_validation(data: dict) -> bool:
+    """Validates import request first fields."""
     if set(data) != {'items', 'updateDate'}:
         return False
     if type(data['items']) is list and type(data['updateDate']) is str:
@@ -46,6 +49,7 @@ def import_req_validation(data: dict) -> bool:
 
 
 def unit_fields_validation(unit: dict) -> bool:
+    """Validates unit fields."""
     # keys validation
     required_keys = {'id', 'name', 'type'}
     all_keys = required_keys | {'parentId', 'price'}
