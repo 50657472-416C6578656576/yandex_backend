@@ -1,7 +1,7 @@
 # yandex_backend
 Yandex backend-school entry task.
 
-- Task and [openAPI specifications](https://github.com/50657472-416C6578656576/yandex_backend/blob/master/enrollment/openapi.yaml) are in the `enrollment` directory.
+- [Task](https://github.com/50657472-416C6578656576/yandex_backend/blob/master/enrollment/Task.md) and [openAPI specifications](https://github.com/50657472-416C6578656576/yandex_backend/blob/master/enrollment/openapi.yaml) are in the `enrollment` directory.
 - My realization is in the `PROJECT` directory.
 
 ---
