@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 from flask import Flask, request
 from flask_api import status
 from flask_sqlalchemy import SQLAlchemy
-from validation_scripts import iso_validation, uuid_validation, unit_fields_validation, import_req_validation
+from .validation_scripts import iso_validation, uuid_validation, unit_fields_validation, import_req_validation
 
 
 app = Flask(__name__)
@@ -265,3 +265,7 @@ def get_statistics(target_id: str):
     ans = [u.get_dict() for u in query.all()]
 
     return {'items': ans}, status.HTTP_200_OK
+
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=80)
