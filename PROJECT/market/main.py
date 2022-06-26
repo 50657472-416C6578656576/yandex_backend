@@ -24,7 +24,7 @@ class AbstractShopUnit(db.Model):
     num_children = db.Column(db.Integer)
 
     # getters
-    def get_price(self) -> int | None:
+    def get_price(self) -> int or None:
         if self.is_category:
             return int(self.price / self.num_children) if (self.num_children and self.price) else None
         else:
@@ -60,7 +60,7 @@ class ShopUnit(AbstractShopUnit):
             self.price += addendum
 
     # getters
-    def get_children(self) -> list | None:
+    def get_children(self) -> list or None:
         if not self.is_category:
             return None
         children = ShopUnit.query.filter_by(parent_id=self.id).all()

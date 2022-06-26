@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime
 
 
-def iso_validation(dt_str: str) -> datetime | None:
+def iso_validation(dt_str: str) -> datetime or None:
     try:
         dt = datetime.fromisoformat(dt_str.replace('Z', '+00:00'))
     except:
