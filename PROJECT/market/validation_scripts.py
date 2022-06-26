@@ -27,7 +27,7 @@ def type_validation(new_type: str, price: int) -> bool:
     is_category = ('CATEGORY' == new_type)
     if price is not None and is_category:
         return False
-    elif (type(price) is not int) and not is_category:
+    elif ((type(price) is not int) or price < 0) and not is_category:
         return False
 
     return True
@@ -58,7 +58,8 @@ def unit_fields_validation(unit: dict) -> bool:
     # value validation
     if type(unit['name']) is not str:
         return False
-    if (not uuid_validation(unit['id'])) or (unit['parentId'] is not None and not uuid_validation(unit['parentId'])):
+    if (not uuid_validation(unit['id'])) or (unit['parentId'] is not None and not uuid_validation(unit['parentId'])) \
+            or (unit['id'] == unit['parentId']):
         return False
     if not type_validation(unit['type'], unit['price']):
         return False
