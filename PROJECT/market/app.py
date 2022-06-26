@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 from flask import Flask, request
 from flask_api import status
 from flask_sqlalchemy import SQLAlchemy
-from .validation_scripts import iso_validation, uuid_validation, unit_fields_validation, import_req_validation
+from market.validation_scripts import iso_validation, uuid_validation, unit_fields_validation, import_req_validation
 
 
 app = Flask(__name__)
